@@ -99,7 +99,8 @@ def closure(flows):
 		pickle.dump(flow_dict, f)
 
 if __name__ == '__main__':
-	pcap = dpkt.pcap.Reader(open('/data/xgr/sketch_data/wide/202006101400.pcap', 'rb'))
+	#pcap = dpkt.pcap.Reader(open('/data/xgr/sketch_data/wide/202006101400.pcap', 'rb'))
+	pcap = dpkt.pcap.Reader(open('e:/data_mining/cyber/mini_project/data_unibs_new/unibs20090930.anon.pcap/unibs20090930.anon.pcap', 'rb'))
 	flows = gen_flows(pcap)
 	closure(flows)
 
