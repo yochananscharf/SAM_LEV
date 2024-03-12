@@ -123,7 +123,7 @@ def main(i, flow_dict):
 	f.write('Train Loss Time Test\n')
 	f.flush()
 
-	model = SAM(num_class=len(protocols), max_byte_len=max_byte_len).cuda()
+	model = SAM(num_class=len(protocols), max_byte_len=50).cuda()
 	optimizer = optim.Adam(filter(lambda x: x.requires_grad, model.parameters()))
 	loss_list = []
 	# default epoch is 3
@@ -131,6 +131,7 @@ def main(i, flow_dict):
 		desc='  - (Training Epochs)   ', leave=False):
 
 		train_x, train_y, train_label = load_epoch_data(flow_dict, 'train')
+		#train_x = train_x[:, 30:]
 		training_data = torch.utils.data.DataLoader(
 				Dataset(x=train_x, y=train_y, label=train_label),
 				num_workers=0,
@@ -141,6 +142,7 @@ def main(i, flow_dict):
 		train_loss, train_acc = train_epoch(model, training_data, optimizer)
 
 		test_x, test_y, test_label = load_epoch_data(flow_dict, 'test')
+		#test_x = test_x[:, 30:]
 		test_data = torch.utils.data.DataLoader(
 				Dataset(x=test_x, y=test_y, label=test_label),
 				num_workers=0,

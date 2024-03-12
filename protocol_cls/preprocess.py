@@ -3,13 +3,14 @@
 # @Date:   2020-08-28 21:26:15
 # @Last Modified by:   xiegr
 # @Last Modified time: 2020-09-16 21:19:38
-import numpy as np
+
 import dpkt
-import random
 import pickle
+import os
 
 protocols = ['dns', 'smtp', 'ssh', 'ftp', 'http', 'https']
 ports = [53, 25, 22, 21, 80, 443]
+xgr = 0
 
 def gen_flows(pcap):
 	flows = [{} for _ in range(len(protocols))]
@@ -18,7 +19,7 @@ def gen_flows(pcap):
 		print('unknow data link!')
 		return
 
-	xgr = 0
+	
 	for _, buff in pcap:
 		eth = dpkt.ethernet.Ethernet(buff)
 		xgr += 1
@@ -56,30 +57,6 @@ def gen_flows(pcap):
 	return flows
 
 
-# def split_train_test(flows, name, k):
-# 	keys = list(flows.keys())
-
-# 	test_keys = keys[k*int(len(keys)*0.1):(k+1)*int(len(keys)*0.1)]
-# 	test_min = 0xFFFFFFFF
-# 	test_flows = {}
-# 	for k in test_keys:
-# 		test_flows[k] = flows[k]
-# 		test_min = min(test_min, len(flows[k]))
-
-# 	train_keys = set(keys) - set(test_keys)
-# 	train_min = 0xFFFFFFFF
-# 	train_flows = {}
-# 	for k in train_keys:
-# 		train_flows[k] = flows[k]
-# 		train_min = min(train_min, len(flows[k]))
-
-# 	print('============================')
-# 	print('Generate flows for %s'%name)
-# 	print('Total flows: ', len(flows))
-# 	print('Train flows: ', len(train_flows), ' Min pkts: ', train_min)
-# 	print('Test flows: ', len(test_flows), ' Min pkts: ', test_min)
-
-# 	return train_flows, test_flows
 
 
 def closure(flows):
@@ -100,8 +77,14 @@ def closure(flows):
 
 if __name__ == '__main__':
 	#pcap = dpkt.pcap.Reader(open('/data/xgr/sketch_data/wide/202006101400.pcap', 'rb'))
-	pcap = dpkt.pcap.Reader(open('e:/data_mining/cyber/mini_project/data_unibs_new/unibs20090930.anon.pcap/unibs20090930.anon.pcap', 'rb'))
-	flows = gen_flows(pcap)
-	closure(flows)
+	pcap_data_dir = 'e:/data_mining/cyber/mini_project/data_unibs_new/'
+	pcap_list = os.listdir(pcap_data_dir)
+	pcap_list = [pcap_data_dir+f for f in pcap_list if f.endswith('.pcap')]
+	all_flows_dict = []
+	for pcap_file in pcap_list:
+		pcap = dpkt.pcap.Reader(open(pcap_file, 'rb'))
+		flows = gen_flows(pcap)
+		all_flows_dict.extend(flows)
+	closure(all_flows_dict)
 
 

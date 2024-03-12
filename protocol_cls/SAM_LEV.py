@@ -76,8 +76,8 @@ class OneDimCNN(nn.Module):
 class SAM(nn.Module):
 	"""docstring for SAM"""
 	# total header bytes 24
-	def __init__(self, num_class, max_byte_len, kernel_size = [3, 4], \
-		d_dim=256, dropout=0.1, filters=256):
+	def __init__(self, num_class, max_byte_len=50, kernel_size = [7], \
+		d_dim=64, dropout=0.05, filters=64):
 		super(SAM, self).__init__()
 		self.posembedding = nn.Embedding(num_embeddings=max_byte_len, 
 								embedding_dim=d_dim)
@@ -85,11 +85,14 @@ class SAM(nn.Module):
 								embedding_dim=d_dim)
 		self.attention = SelfAttention(d_dim, dropout)
 		self.cnn = OneDimCNN(max_byte_len, d_dim, kernel_size, filters, dropout)
-		self.fc = nn.Linear(in_features=256*len(kernel_size),
+		self.fc = nn.Linear(in_features=filters*len(kernel_size),
                             out_features=num_class)
+		self.pos_encodings = torch.arange(0,max_byte_len).cuda()
 
+
+	
 	def forward(self, x, y):
-		out = self.byteembedding(x) + self.posembedding(y)
+		out = self.byteembedding(x.cuda()) + self.posembedding(self.pos_encodings)
 		out, score = self.attention(out, out, out)
 		out = self.cnn(out)
 		out = self.fc(out)
@@ -100,7 +103,7 @@ class SAM(nn.Module):
 if __name__ == '__main__':
 	x = np.random.randint(0, 255, (10, 20))
 	y = np.random.randint(0, 20, (10, 20))
-	sam = SAM(num_class=5, max_byte_len=20)
+	sam = SAM(num_class=5, max_byte_len=50)
 	out = sam(torch.from_numpy(x).long(), torch.from_numpy(y).long())
 	print(out[0])
 
