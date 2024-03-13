@@ -91,7 +91,7 @@ class SAM(nn.Module):
 
 
 	
-	def forward(self, x, y):
+	def forward(self, x):
 		out = self.byteembedding(x.cuda()) + self.posembedding(self.pos_encodings)
 		out, score = self.attention(out, out, out)
 		out = self.cnn(out)
