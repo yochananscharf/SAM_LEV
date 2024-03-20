@@ -126,6 +126,8 @@ def main(i, flow_dict):
 	model = SAM(num_class=len(protocols), max_byte_len=50).cuda()
 	optimizer = optim.Adam(filter(lambda x: x.requires_grad, model.parameters()))
 	loss_list = []
+	total_params = sum(p.numel() for p in model.parameters())
+	print(f"Number of parameters: {total_params}")
 	# default epoch is 3
 	for epoch_i in trange(5, mininterval=2, \
 		desc='  - (Training Epochs)   ', leave=False):
@@ -188,7 +190,7 @@ def main(i, flow_dict):
 
 
 if __name__ == '__main__':
-	for i in range(10):
+	for i in range(5):
 		with open('pro_flows_%d_noip_fold.pkl'%i, 'rb') as f:
 			flow_dict = pickle.load(f)
 		print('====', i, ' fold validation ====')
