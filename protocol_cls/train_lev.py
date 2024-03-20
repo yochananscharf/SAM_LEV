@@ -11,7 +11,7 @@ import torch.nn as nn
 import time
 from tqdm import tqdm, trange
 from SAM_LEV import SAM
-from tool import protocols, load_epoch_data, max_byte_len
+from tool_lev import protocols, load_epoch_data, max_byte_len
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 import pickle
 import numpy as np
@@ -31,6 +31,8 @@ class Dataset(torch.utils.data.Dataset):
 
 def paired_collate_fn(insts):
 	x, label = list(zip(*insts))
+	x = np.array(x)
+	label = np.array(label)
 	return torch.LongTensor(x), torch.LongTensor(label)
 
 def cal_loss(pred, gold, cls_ratio=None):
@@ -58,28 +60,29 @@ def test_epoch(model, test_data):
 	# desc ：进度条的描述
 	# leave：把进度条的最终形态保留下来 bool
 	# mininterval：最小进度更新间隔，以秒为单位
-	for batch in tqdm(
-		test_data, mininterval=2,
-		desc='  - (Testing)   ', leave=False):
+	with torch.no_grad():
+		for batch in tqdm(
+			test_data, mininterval=2,
+			desc='  - (Testing)   ', leave=False):
 
-		# prepare data
-		src_seq, gold = batch
-		src_seq, gold = src_seq.cuda(), gold.cuda()
-		gold = gold.contiguous().view(-1)
+			# prepare data
+			src_seq, gold = batch
+			src_seq, gold = src_seq.cuda(), gold.cuda()
+			gold = gold.contiguous().view(-1)
 
-		# forward
-		torch.cuda.synchronize()
-		start = time.time()
-		pred, score = model(src_seq)
-		torch.cuda.synchronize()
-		end = time.time()
-		# 相等位置输出1，否则0
-		n_correct = pred.eq(gold)
-		acc = n_correct.sum().item()*100 / n_correct.shape[0]
-		total_acc.append(acc)
-		total_pred.extend(pred.long().tolist())
-		total_score.append(torch.mean(score, dim=0).tolist())
-		total_time.append(end - start)
+			# forward
+			torch.cuda.synchronize()
+			start = time.time()
+			pred, score = model(src_seq)
+			torch.cuda.synchronize()
+			end = time.time()
+			# 相等位置输出1，否则0
+			n_correct = pred.eq(gold)
+			acc = n_correct.sum().item()*100 / n_correct.shape[0]
+			total_acc.append(acc)
+			total_pred.extend(pred.tolist())
+			total_score.append(torch.mean(score, dim=0).tolist())
+			total_time.append(end - start)
 
 	return sum(total_acc)/len(total_acc), np.array(total_score).mean(axis=0), \
 	total_pred, sum(total_time)/len(total_time)
@@ -124,11 +127,14 @@ def main(i, flow_dict):
 	model = SAM(num_class=len(protocols), max_byte_len=50).cuda()
 	optimizer = optim.Adam(filter(lambda x: x.requires_grad, model.parameters()))
 	loss_list = []
+	total_params = sum(p.numel() for p in model.parameters())
+	print(f"Number of parameters: {total_params}")
 	# default epoch is 3
 	for epoch_i in trange(5, mininterval=2, \
 		desc='  - (Training Epochs)   ', leave=False):
 
-		train_x, train_y, train_label = load_epoch_data(flow_dict, 'train')
+		#train_x, train_y, train_label = load_epoch_data(flow_dict, 'train')
+		train_x, train_label = load_epoch_data(flow_dict, 'train')
 		#train_x = train_x[:, 30:]
 		training_data = torch.utils.data.DataLoader(
 				Dataset(x=train_x, label=train_label),
@@ -139,7 +145,7 @@ def main(i, flow_dict):
 			)
 		train_loss, train_acc = train_epoch(model, training_data, optimizer)
 
-		test_x, test_y, test_label = load_epoch_data(flow_dict, 'test')
+		test_x, test_label = load_epoch_data(flow_dict, 'test')
 		#test_x = test_x[:, 30:]
 		test_data = torch.utils.data.DataLoader(
 				Dataset(x=test_x, label=test_label),
@@ -186,7 +192,7 @@ def main(i, flow_dict):
 
 
 if __name__ == '__main__':
-	for i in range(10):
+	for i in range(5):
 		with open('pro_flows_%d_noip_fold.pkl'%i, 'rb') as f:
 			flow_dict = pickle.load(f)
 		print('====', i, ' fold validation ====')

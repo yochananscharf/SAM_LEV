@@ -43,6 +43,7 @@ class SelfAttention(nn.Module):
 		# 3) apply the final linear
 		x = self.linears[-1](x.contiguous())
 		# sum keepdim=False
+		
 		return self.dropout(x), torch.mean(scores, dim=-2)
 
 class OneDimCNN(nn.Module):
@@ -104,7 +105,7 @@ if __name__ == '__main__':
 	x = np.random.randint(0, 255, (10, 20))
 	y = np.random.randint(0, 20, (10, 20))
 	sam = SAM(num_class=5, max_byte_len=50)
-	out = sam(torch.from_numpy(x).long(), torch.from_numpy(y).long())
+	out = sam(torch.from_numpy(x).long())
 	print(out[0])
 
 	sam.eval()

@@ -10,10 +10,10 @@ import os
 
 protocols = ['dns', 'smtp', 'ssh', 'ftp', 'http', 'https']
 ports = [53, 25, 22, 21, 80, 443]
+xgr = 0
 
 def gen_flows(pcap):
 	flows = [{} for _ in range(len(protocols))]
-	xgr = 0
 
 	if pcap.datalink() != dpkt.pcap.DLT_EN10MB:
 		print('unknow data link!')
@@ -76,17 +76,15 @@ def closure(flows):
 		pickle.dump(flow_dict, f)
 
 if __name__ == '__main__':
-	pcap_file = "e:/data_mining/cyber/mini_project/202006101400.pcap"
-	pcap = dpkt.pcap.Reader(open(pcap_file, 'rb'))
-	#pcap_data_dir = 'e:/data_mining/cyber/mini_project/data_unibs_new/'
-	#pcap_list = os.listdir(pcap_data_dir)
-	#pcap_list = [pcap_data_dir+f for f in pcap_list if f.endswith('.pcap')]
-	#all_flows_dict = []
-	#for pcap_file in pcap_list:
-	pcap = dpkt.pcap.Reader(open(pcap_file, 'rb'))
-	flows = gen_flows(pcap)
-		#all_flows_dict.extend(flows)
-	#closure(all_flows_dict)
-	closure(flows)
+	#pcap = dpkt.pcap.Reader(open('/data/xgr/sketch_data/wide/202006101400.pcap', 'rb'))
+	pcap_data_dir = 'e:/data_mining/cyber/mini_project/data_unibs_new/'
+	pcap_list = os.listdir(pcap_data_dir)
+	pcap_list = [pcap_data_dir+f for f in pcap_list if f.endswith('.pcap')]
+	all_flows_dict = []
+	for pcap_file in pcap_list:
+		pcap = dpkt.pcap.Reader(open(pcap_file, 'rb'))
+		flows = gen_flows(pcap)
+		all_flows_dict.extend(flows)
+	closure(all_flows_dict)
 
 
